@@ -1,89 +1,86 @@
 import Tkinter, time, logging, sys
 import numpy as np
 from NeuralNetwork import Net
+from scipy import *
+from matplotlib import pyplot as plt
+from RBF import RBF
+import Tkinter
+import logging
+import numpy as np
+from copy import copy
 
-class Main:
-    def __init__(self):
-        logging.basicConfig(filename='logger.log', level=logging.DEBUG)
-        logging.getLogger().addHandler(logging.StreamHandler())
+__author__ = 'azu'
 
-        self.training_patterns = []
-        self.training_targets = []
-        self.desired_error = 0.1
-        self.neurons = 3
-        logging.info("-----------------------------------------------------------")
-        logging.info("         PREDICCION DE SISMOS (BACKPROPAGATION)")
-        logging.info("-----------------------------------------------------------")
-
-        # Creating GUI
-        top = Tkinter.Tk()
-        top.wm_title("ADALINE Example")
-        Tkinter.Button(top, text="Entrenar red", command=self.train_the_net).pack()
-        Tkinter.Button(top, text="Clasificar patrones", command=self.classify_patterns).pack()
-        self.label = Tkinter.StringVar()
-        Tkinter.Label(top, textvariable=self.label).pack()
-        top.mainloop()
-
-    def train_the_net(self):
-        start_time = time.time()
-        # Reading the inputs from a file
-        logging.info("---               Training patterns                     ---")
-        logging.info("-----------------------------------------------------------")
-        logging.info(" Pattern\t\tTarget")
-        for line in open('inputs.csv', 'r'):
-            self.training_patterns.append(np.matrix(line.split('|')[0]))
-            self.training_targets.append(np.matrix(line.split('|')[1]))
-            logging.info("%s", line.replace('\n', '').replace('|', '\t\t'))
-
-        # Creating & training the network
-        input_length = len(self.training_patterns[0])
-        target_length = len(self.training_targets[0])
-        self.net = Net(input_length, self.neurons, target_length)
-        self.net.learn(self.training_patterns, self.training_targets, self.desired_error)
-        # If alpha is not set, it would be calculated by the correlation matrix
-        # You can also add a weights matrix and a threshold value to the network and add them to the learn() function. Eg
-        # net.learn(self.training_patterns, self.training_targets, self.desired_error, alpha=0.4, weights=w, threshold=b)
+logging.basicConfig(filename='logger.log', level=logging.DEBUG)
+logging.getLogger().addHandler(logging.StreamHandler())
 
 
-        '''
-        # Now the ADALINE is trained and we can get the results and save them in a file
-        f = open('weights.py', 'w')
-        f.write('W1 = ' + self.net.weights1.__str__() + '\n')
-        f.write('b1 = ' + self.net.threshold1.__str__())
-        f.write('W2 = ' + self.net.weights2.__str__() + '\n')
-        f.write('b2 = ' + self.net.threshold2.__str__())
-        f.close()
-        '''
-
-        # Showing weights and threshold in GUi
-        self.label.set('Red entrenada')
-        # Plotting the inputs and targets
-        logging.info("---    Training finished in %s seconds    ---", (time.time() - start_time))
-        logging.info("-----------------------------------------------------------")
-
-    def classify_patterns(self):
-        start_time = time.time()
-        # Once the network is trained, classify some patterns
-        self.patterns = []
-        self.targets = []
-        for line in open('test.csv', 'r'):
-            self.patterns.append(np.matrix(line.split('|')[0]))
-        self.targets = self.net.classify(self.patterns)
-
-        # Now we can get the results
-        logging.info("-----------------------------------------------------------")
-        logging.info("---           Pattern classification results           ---")
-        logging.info("-----------------------------------------------------------")
-        logging.info(" Pattern \t\t Target")
-        f = open('results.txt', 'w')
-        tar = [[int(round(q,0)) for q in p] for p in self.targets]
-        for p, t in zip(self.patterns, tar):
-            f.write(p.__str__().replace('[', '').replace(']', '').replace('\n', ';') + "|" + t.__str__().replace('[','').replace(']','').replace(',',';') + "\n")
-            logging.info(p.__str__().replace('[', '').replace(']', '').replace('\n', ';') + "\t" + t.__str__().replace('[','').replace(']','').replace(',',';'))
-        f.close()
-        logging.info("---    Classifying finished in %s seconds    ---", (time.time() - start_time))
-        logging.info("-----------------------------------------------------------")
-        # Plotting the inputs and targets
+def get_patterns(file):
+    p = []
+    for line in open(file, 'r'):
+        p.append(np.matrix(line.split('|')[0]))
+    return np.array(p)
 
 
-Main()
+def get_targets(file):
+    p = []
+    for line in open(file, 'r'):
+        p.append(np.matrix(line.split('|')[1]))
+    return np.array(p)
+
+
+# Get data
+w = np.matrix([[0.7071, -0.7071], [0.7071, 0.7071], [-1, 0]])
+patterns = get_patterns('inputs.csv')
+targets = get_targets('inputs.csv')
+test = get_patterns('test.csv')
+neurons = 3
+epochs = 300
+
+'''
+#Creating GUI
+top = Tkinter.Tk()
+top.wm_title("Red neuronal competitiva")
+Tkinter.Button(top, text="Mostrar parametros iniciales", command=plot_init_data).pack()
+Tkinter.Button(top, text="Mostrar parametros finales", command=plot_final_data).pack()
+label = Tkinter.StringVar()
+var = "Numero de neuronas: "+neurons.__str__()+"\nEpocas: "+epochs.__str__()
+label.set(var)
+Tkinter.Label(top, textvariable=label).pack()
+top.mainloop()
+
+logging.info("Parametros iniciales: %s",w)
+logging.info("Parametros finales: %s",net.w)
+'''
+
+# ----- 1D Example ------------------------------------------------
+n = 100
+
+x = mgrid[-1:1:complex(0,n)].reshape(n, 1)
+# set y and add random noise
+y = sin(3*(x+0.5)**3 - 1)
+# y += random.normal(0, 0.1, y.shape)
+
+# rbf regression
+rbf = RBF(1, 10, 1)
+rbf.train(patterns, targets)
+z = rbf.test(test)
+
+# plot original data
+plt.figure(figsize=(12, 8))
+plt.plot(x, y, 'k-')
+
+# plot learned model
+plt.plot(x, z, 'r-', linewidth=2)
+
+# plot rbfs
+plt.plot(rbf.centers, zeros(rbf.numCenters), 'gs')
+
+for c in rbf.centers:
+    # RF prediction lines
+    cx = arange(c-0.7, c+0.7, 0.01)
+    cy = [rbf._basisfunc(array([cx_]), array([c])) for cx_ in cx]
+    plt.plot(cx, cy, '-', color='gray', linewidth=0.2)
+
+plt.xlim(-1.2, 1.2)
+plt.show()
