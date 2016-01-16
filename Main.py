@@ -1,86 +1,35 @@
-import Tkinter, time, logging, sys
-import numpy as np
-from NeuralNetwork import Net
-from scipy import *
-from matplotlib import pyplot as plt
-from RBF import RBF
-import Tkinter
-import logging
-import numpy as np
-from copy import copy
+import csv
 
-__author__ = 'azu'
+import pandas as pd
+from sklearn.linear_model import LinearRegression, LogisticRegression
 
-logging.basicConfig(filename='logger.log', level=logging.DEBUG)
-logging.getLogger().addHandler(logging.StreamHandler())
+earthquakes_df = pd.read_csv("train.csv")
+test_df = pd.read_csv("test.csv")
 
+Y_train = earthquakes_df["Dangerous"]
 
-def get_patterns(file):
-    p = []
-    for line in open(file, 'r'):
-        p.append(np.matrix(line.split('|')[0]))
-    return np.array(p)
+Y_test = test_df["Dangerous"]
 
+# drop labels from training set, given that label is the dependant feature
+# and we want to predict label given predictors or independent features
+X_train = earthquakes_df.drop("Magnitude",axis=1)
+X_train = earthquakes_df.drop("Dangerous",axis=1)
 
-def get_targets(file):
-    p = []
-    for line in open(file, 'r'):
-        p.append(np.matrix(line.split('|')[1]))
-    return np.array(p)
+# Test set (droping rows with NULL values)
+# make a copy of PassengerId
+X_test  = test_df.drop("Magnitude",axis=1).dropna().copy()
+X_test  = test_df.drop("Dangerous",axis=1).dropna().copy()
 
+#lin = LinearRegression() #initialize regressor
+lin = LogisticRegression()
+lin.fit(X_train, Y_train) #fit training data
 
-# Get data
-w = np.matrix([[0.7071, -0.7071], [0.7071, 0.7071], [-1, 0]])
-patterns = get_patterns('inputs.csv')
-targets = get_targets('inputs.csv')
-test = get_patterns('test.csv')
-neurons = 3
-epochs = 300
+preds = lin.predict(X_test) #make prediction on X test set
 
-'''
-#Creating GUI
-top = Tkinter.Tk()
-top.wm_title("Red neuronal competitiva")
-Tkinter.Button(top, text="Mostrar parametros iniciales", command=plot_init_data).pack()
-Tkinter.Button(top, text="Mostrar parametros finales", command=plot_final_data).pack()
-label = Tkinter.StringVar()
-var = "Numero de neuronas: "+neurons.__str__()+"\nEpocas: "+epochs.__str__()
-label.set(var)
-Tkinter.Label(top, textvariable=label).pack()
-top.mainloop()
+results = open('results,csv','w')
+results.write("Dangerous\n")
+for p in preds:
+    results.write(p.__str__()+"\n")
+results.close()
 
-logging.info("Parametros iniciales: %s",w)
-logging.info("Parametros finales: %s",net.w)
-'''
-
-# ----- 1D Example ------------------------------------------------
-n = 100
-
-x = mgrid[-1:1:complex(0,n)].reshape(n, 1)
-# set y and add random noise
-y = sin(3*(x+0.5)**3 - 1)
-# y += random.normal(0, 0.1, y.shape)
-
-# rbf regression
-rbf = RBF(1, 10, 1)
-rbf.train(patterns, targets)
-z = rbf.test(test)
-
-# plot original data
-plt.figure(figsize=(12, 8))
-plt.plot(x, y, 'k-')
-
-# plot learned model
-plt.plot(x, z, 'r-', linewidth=2)
-
-# plot rbfs
-plt.plot(rbf.centers, zeros(rbf.numCenters), 'gs')
-
-for c in rbf.centers:
-    # RF prediction lines
-    cx = arange(c-0.7, c+0.7, 0.01)
-    cy = [rbf._basisfunc(array([cx_]), array([c])) for cx_ in cx]
-    plt.plot(cx, cy, '-', color='gray', linewidth=0.2)
-
-plt.xlim(-1.2, 1.2)
-plt.show()
+print "Porcentaje de efectividad: "+lin.score(X_train, Y_train).__str__() + "%"
