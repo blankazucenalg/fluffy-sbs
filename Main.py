@@ -1,8 +1,11 @@
+import logging
 from random import random, randint, gauss
 
 import pandas as pd
 import numpy as np
-from sklearn.linear_model import LinearRegression, LogisticRegression
+
+logging.basicConfig(filename='logging.log', level=logging.DEBUG)
+logging.getLogger().addHandler(logging.StreamHandler())
 
 earthquakes_df = pd.read_csv("train.csv")
 test_df = pd.read_csv("test.csv")
@@ -46,17 +49,10 @@ class GeneticAlgorithm:
                 new_population = self.generate_new_population(fitness)
                 self.population = (self.choose_best(new_population))[0:self.population_size]
                 fitness = self.population_fitness()
-
-                #print "+-" * 60 + "\n"
-                #print "Generation: ", t
-                #print "Single : ", self.population[0]
-                #print "Fitness : ", fitness[0]
-                #print "+-" * 60 + "\n"
-
-            print "**" * 60 + "\n"
-            print "At train index %s" % (str(t%len(X_train)))
-            print self.train, self.population[0], abs(fitness[0])
-            print "**" * 60 + "\n"
+            logging.info("**" * 60 + "\n")
+            logging.info("At train index %s" % (str(t%len(X_train))))
+            logging.info("%s %s \nError= %s" % (self.train, self.population[0], abs(fitness[0])))
+            logging.info("**" * 60 + "\n")
 
     def population_fitness(self):
         fitness = []
