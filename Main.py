@@ -37,21 +37,24 @@ class GeneticAlgorithm:
     def fit(self, X_train, Y_train, population_size, epsilon=0.1, epochs=3):
         self.population_size = population_size
         self.chromosome_length = len(X_train[0])
+        patterns_quantity = len(X_train)
         self.population = np.zeros([population_size, self.chromosome_length])
         for i in range(population_size):
             for j in range(self.chromosome_length):
                 self.population[i][j] = random() *10
-        for t in range(len(X_train)*epochs):
-            self.value = Y_train[t%len(X_train)]
-            self.train = X_train[t%len(X_train)]
+        for t in range(patterns_quantity*epochs):
+            self.value = Y_train[t%patterns_quantity]
+            self.train = X_train[t%patterns_quantity]
             fitness = self.population_fitness() #Error existente reales y pob
             while fitness[0] > epsilon:
                 new_population = self.generate_new_population(fitness)
                 self.population = (self.choose_best(new_population))[0:self.population_size]
                 fitness = self.population_fitness()
             logging.info("**" * 60 + "\n")
-            logging.info("At train index %s" % (str(t%len(X_train))))
-            logging.info("%s %s \nError= %s" % (self.train, self.population[0], abs(fitness[0])))
+            logging.info("Epoch: %s At train index %s" % (str(t/patterns_quantity+1),str(t%patterns_quantity)))
+            logging.info("Training pattern: \t%s" % (self.train))
+            logging.info("Weights vector: \t%s" % (self.population[0]))
+            logging.info("Error: \t%s" % (fitness[0]))
             logging.info("**" * 60 + "\n")
 
     def population_fitness(self):
@@ -131,7 +134,7 @@ class GeneticAlgorithm:
         return 0.5
 
 ga = GeneticAlgorithm()
-ga.fit(X_train, Y_train, 10, epochs=3)  # fit training data
+ga.fit(X_train, Y_train, 10, epsilon=0.1, epochs=3)  # fit training data
 
 preds = ga.predict(X_train)  # make prediction on X test set
 
